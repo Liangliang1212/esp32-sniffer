@@ -43,6 +43,10 @@ int s_device_info_num           = 0;
 station_info_t *station_info    = NULL;
 station_info_t *g_station_list  = NULL;
 /* MQTT settings about onenet */
+/*personal variable*/
+/*channle hop*/
+static uint8_t  channel_primary;
+static wifi_second_chan_t  channel_second;
 
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
@@ -136,6 +140,15 @@ void wifi_sniffer_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
     printf("MAC: 0x%02X.0x%02X.0x%02X.0x%02X.0x%02X.0x%02X, The time is: %d, The rssi = %d\n", station_info->bssid[0], station_info->bssid[1], station_info->bssid[2], station_info->bssid[3], station_info->bssid[4], station_info->bssid[5], station_info->timestamp, station_info->rssi);
 }
 
+/*channel hop callback functiuon*/
+/*this is personal code*/
+void channel_hop_cb(void *arg)
+{
+    // 1 - 13 channel hopping
+    esp_wifi_get_channel(&channel_primary,&channel_second);
+    uint8_t new_channel =(channel_primary)% 12 + 1;
+    esp_wifi_set_channel(new_channel,channel_second);
+}
 static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 {
     switch (event->event_id) {
@@ -149,6 +162,24 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
             g_station_list->next = NULL;
             ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(wifi_sniffer_cb));
             ESP_ERROR_CHECK(esp_wifi_set_promiscuous(1));
+	
+	
+
+			
+			/*change the hop interval of channel*/
+			/*this is the personal code ,with something wrong perhaps*/
+			/*
+			esp_timer_create_args_t channer_hop_args={
+										.callback=&channel_hop_cb,//callback function
+										.arg=NULL,
+										.name="channer_hop_timer",// timer name
+										};
+			esp_timer_handle_t channer_hop_handle;
+			esp_timer_create(&channer_hop_args, &channer_hop_handle);
+			esp_timer_start_periodic(channer_hop_handle,3000);
+			*/
+
+	
         }
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -222,6 +253,6 @@ void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
-    wifi_init();
+    wifi_init();		
     mqtt_app_start();
 }

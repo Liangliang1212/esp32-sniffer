@@ -35,52 +35,32 @@ station_info_t *station_info_one = NULL;
 void onenet_task(void *param)
 {
     esp_mqtt_client_handle_t client = *(esp_mqtt_client_handle_t *)param;
-    uint64_t val,val_temp;
+	char  val_mac_timestamp_rssi[20];
+	
 
     while (1) {
-        //val =  s_device_info_num ;
         char buf[128];
-        //memset(buf, 0, sizeof(buf));
-        //sprintf(&buf[3], "{\"%s\":%d}", ONENET_DATA_STREAM, val);
-        //uint16_t len = strlen(&buf[3]);
-        //buf[0] = data_type_simple_json_without_time;
-        //buf[1] = len >> 8;
-        //buf[2] = len & 0xFF;
-
-        //esp_mqtt_client_publish(client, "$dp", buf, len + 3, 0, 0);
         s_device_info_num = 0;
 
         for (station_info_one = g_station_list->next; station_info_one; station_info_one = g_station_list->next) {
             g_station_list->next = station_info_one->next;
+			
 			/*transfer the value of mac,rssi and time to a sting for the convinience of excibition */
         	memset(buf, 0, sizeof(buf));
-			/*combine mac data with rssi for the convenience to exhibit*/
-			val_temp=(uint64_t)station_info_one->bssid[5];
-			val=val_temp;
-			val_temp=(uint64_t)station_info_one->bssid[4];
-			val=(val_temp<<8)+val;
-			val_temp=(uint64_t)station_info_one->bssid[3];
-			val=(val_temp<<16)+val;
-			val_temp=(uint64_t)station_info_one->bssid[2];
-			val=(val_temp<<24)+val;
-			val_temp=(uint64_t)station_info_one->bssid[1];
-			val=(val_temp<<32)+val;
-			val_temp=(uint64_t)station_info_one->bssid[0];
-			val=(val_temp<<40)+val;
-			val_temp=-(uint64_t)station_info_one->rssi;
-			val=(val<<8)+val_temp;
-			/*transfer the format of data*/
-			sprintf(&buf[3],"{\"%s\":%llu}",ONENET_DATA_STREAM,val);
+			/*combine mac data with rssi and timestamp for the convenience to exhibit*/
+			/*the value of mac timestamp and rssi*/			
+			sprintf(val_mac_timestamp_rssi,"%x%x%x%x%x%x_%d_%d",station_info_one->bssid[0],station_info_one->bssid[1],station_info_one->bssid[2],station_info_one->bssid[3],station_info_one->bssid[4],station_info_one->bssid[5],station_info_one->timestamp,station_info_one->rssi);
+			/*buf get the message of mac time and rssi*/
+			sprintf(&buf[3], "{\"check_pedestrian_flow\":\"%s\"}", val_mac_timestamp_rssi);
 			uint16_t len = strlen(&buf[3]);
-        	buf[0] = data_type_simple_json_without_time;
+        	buf[0] = 0x03;
         	buf[1] = len >> 8;
         	buf[2] = len & 0xFF;
-			//printf("len=%x;buf[1]=%x;buf[2]=%x\n",len,buf[1],buf[2]);//test flag ...........
 			esp_mqtt_client_publish(client, "$dp", buf, len + 3, 0, 0);
 			free(station_info_one);
         }
 		/*this function can ajust the publish time*/
-        vTaskDelay((unsigned long long)ONENET_PUB_INTERVAL * 2000 / portTICK_RATE_MS);
+        vTaskDelay((unsigned long long)ONENET_PUB_INTERVAL * 1000 / portTICK_RATE_MS);
     }
 }
 

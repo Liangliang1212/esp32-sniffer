@@ -16,6 +16,9 @@
 #define ONENET_PROJECT_ID   "199054"                   // mqtt username
 #define ONENET_AUTH_INFO    "15655628662"                    // mqtt password
 #define ONENET_DATA_STREAM  "test"                  // datastream name
+#define ONENET_DATA_ID1 	"MAC"
+#define ONENET_DATA_ID2		"TIME"
+#define ONENET_DATA_ID3		"RSSI"
 
 #define ONENET_PUB_INTERVAL (60)                         // unit: s
 
